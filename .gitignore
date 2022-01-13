@@ -33,3 +33,4 @@
 
 # Bazel artifacts
 bazel-*
+user.bazelrc
