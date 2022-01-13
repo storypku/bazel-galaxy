@@ -1,0 +1,5 @@
+# a -> b means a depends on b
+digraph {
+    "tcmalloc" -> "absl";
+    "tcmalloc" -> "rules_fuzzing";
+}

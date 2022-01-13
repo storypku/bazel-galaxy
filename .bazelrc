@@ -1,1 +1,2 @@
+build --cxxopt="-std=c++1z" --host_cxxopt="-std=c++1z"
 try-import %workspace%/user.bazelrc

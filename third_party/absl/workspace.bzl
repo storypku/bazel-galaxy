@@ -1,8 +1,5 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-def clean_dep(dep):
-    return str(Label(dep))
-
 def repo():
     version = "20211102.0"
     http_archive(
