@@ -1,2 +1,6 @@
+# For googletest to use absl
 build --cxxopt="-std=c++1z" --host_cxxopt="-std=c++1z"
+
+build --define absl=1
+
 try-import %workspace%/user.bazelrc
