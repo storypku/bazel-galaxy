@@ -8,7 +8,7 @@
 
 // How to run:
 // GLOG_logtostderr=1 bazel run //examples/absl:hello_world
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   google::InitGoogleLogging(argv[0]);
 
   std::vector<std::string> v = {"foo", "bar", "baz"};
