@@ -36,5 +36,4 @@ bazel-*
 user.bazelrc
 
 # Temporarily
-third_party/rules_cuda/*.git
-
+*.bak
