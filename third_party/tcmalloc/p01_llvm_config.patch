@@ -1,0 +1,17 @@
+diff --git a/tcmalloc/BUILD b/tcmalloc/BUILD
+index 2114359..85e37f7 100644
+--- a/tcmalloc/BUILD
++++ b/tcmalloc/BUILD
+@@ -28,10 +28,11 @@ licenses(["notice"])
+
+ exports_files(["LICENSE"])
+
++# TODO(storypku): An ugly workaround for now.
+ config_setting(
+     name = "llvm",
+     flag_values = {
+-        "@bazel_tools//tools/cpp:compiler": "clang",
++        "@rules_cuda//cuda:compiler": "clang",
+     },
+     visibility = [
+         "//tcmalloc/internal:__subpackages__",
