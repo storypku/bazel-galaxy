@@ -1,3 +1,6 @@
+def _create_local_repository(repository_ctx, cuda_path):
+    pass
+
 def _local_config_cuda_impl(repository_ctx):
     # Path to CUDA Toolkit is
     # - taken from CUDA_PATH environment variable or
@@ -8,12 +11,9 @@ def _local_config_cuda_impl(repository_ctx):
     if ptxas_path:
         cuda_path = ptxas_path.dirname.dirname
     cuda_path = repository_ctx.os.environ.get("CUDA_PATH", cuda_path)
-
     if repository_ctx.path(cuda_path).exists:
         repository_ctx.file("BUILD")
-        # repository_ctx.symlink(cuda_path, "cuda")
-        # repository_ctx.symlink(Label("//private:BUILD.local_cuda"), "BUILD")
-
+        _create_local_repository(repository_ctx, cuda_path)
     else:
         repository_ctx.file("BUILD")  # Empty file
 

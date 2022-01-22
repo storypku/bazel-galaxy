@@ -1,5 +1,6 @@
 package(default_visibility = ["//visibility:public"])
 
 exports_files([
-    "common.bzl",
+    "cuda_configure.bzl",
+    "local_config_cuda.BUILD",
 ])

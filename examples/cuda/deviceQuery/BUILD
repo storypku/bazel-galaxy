@@ -6,7 +6,6 @@ cuda_binary(
     name = "deviceQuery",
     srcs = ["deviceQuery.cpp"],
     deps = [
-            "//examples/cuda/common:cuda_helper",
-            ],
-
+        "//examples/cuda/common:cuda_helper",
+    ],
 )
