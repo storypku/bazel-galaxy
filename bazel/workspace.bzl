@@ -10,15 +10,16 @@ load("//third_party/rules_fuzzing:workspace.bzl", rules_fuzzing = "repo")
 load("//third_party/rules_python:workspace.bzl", rules_python = "repo")
 load("//third_party/tcmalloc:workspace.bzl", tcmalloc = "repo")
 
+def rules_bazel_repos():
+    bazel_skylib()
+    platforms()
+
 def rules_lang_repos():
     rules_python()
     rules_cc()
     rules_cuda()
 
 def third_party_repos():
-    bazel_skylib()
-    platforms()
-
     absl()
     glog(with_gflags = 0)
     googletest()
@@ -28,5 +29,6 @@ def third_party_repos():
     tcmalloc()
 
 def galaxy_repositories():
+    rules_bazel_repos()
     rules_lang_repos()
     third_party_repos()
