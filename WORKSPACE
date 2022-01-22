@@ -8,6 +8,6 @@ load("//bazel:deps.bzl", "galaxy_dependencies")
 
 galaxy_dependencies()
 
-load("@rules_fuzzing//fuzzing:init.bzl", "rules_fuzzing_init")
+load("//bazel:init.bzl", "galaxy_init")
 
-rules_fuzzing_init()
+galaxy_init()
