@@ -1,6 +1,5 @@
 load(":build_defs.bzl", "cuda_header_library")
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("@bazel_skylib//lib:selects.bzl", "selects")
 
 licenses(["restricted"])  # MPL2, portions GPL v3, LGPL v3, BSD-like
 

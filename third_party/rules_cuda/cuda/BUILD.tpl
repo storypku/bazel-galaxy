@@ -1,6 +1,5 @@
 load(":build_defs.bzl", "cuda_header_library")
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("@bazel_skylib//lib:selects.bzl", "selects")
 
 licenses(["restricted"])  # MPL2, portions GPL v3, LGPL v3, BSD-like
 
@@ -41,13 +40,13 @@ cc_library(
     linkstatic = 1,
 )
 
-cuda_header_library(
+# cuda_header_library(
+cc_library(
     name = "cublas_headers",
     hdrs = [":cublas-include"],
-    include_prefix = "third_party/gpus/cuda/include",
-    includes = ["cublas/include"],
-    strip_include_prefix = "cublas/include",
-    deps = [":cuda_headers"],
+    deps = [
+        "@local_cuda//:cuda_headers",
+    ],
 )
 
 cuda_header_library(
