@@ -222,19 +222,16 @@ def _get_cuda_config(repository_ctx, find_cuda_config_script):
 
 def make_copy_files_rule(repository_ctx, name, srcs, outs):
     """Returns a rule to copy a set of files."""
-    cmds = []
-
     # Copy files.
-    for src, out in zip(srcs, outs):
-        cmds.append('cp -f "%s" "$(location %s)"' % (src, out))
-    outs = [('        "%s",' % out) for out in outs]
+    cmds = ['cp -f "{}" "$(location {})"'.format(src, out) for (src, out) in zip(srcs, outs)]
+    outs = ['        "{}",'.format(out) for out in outs]
     return """genrule(
-    name = "%s",
+    name = "{}",
     outs = [
-%s
+{}
     ],
-    cmd = \"""%s \""",
-)""" % (name, "\n".join(outs), " && \\\n".join(cmds))
+    cmd = \"""{} \""",
+)""".format(name, "\n".join(outs), " && \\\n".join(cmds))
 
 def make_copy_dir_rule(repository_ctx, name, src_dir, out_dir, exceptions = None):
     """Returns a rule to recursively copy a directory.
@@ -273,9 +270,8 @@ def _create_local_cuda_repository(repository_ctx):
     """Creates the repository containing files set up to build with CUDA."""
 
     # Resolve all labels before doing any real work.
-    tpl_paths = {}
-    tpl_paths["cuda:BUILD"] = _tpl_path(repository_ctx, "cuda:BUILD")
-    find_cuda_config_script = repository_ctx.path(Label("@com_github_story_bazel_galaxy//third_party/gpus:find_cuda_config.py"))
+    cuda_tpl_path = _tpl_path(repository_ctx, "cuda:BUILD")
+    find_cuda_config_script = repository_ctx.path(Label("@com_github_story_bazel_galaxy//third_party/rules_cuda:find_cuda_config.py"))
     cuda_config = _get_cuda_config(repository_ctx, find_cuda_config_script)
 
     cuda_include_path = cuda_config.config["cuda_include_dir"]
@@ -373,7 +369,7 @@ def _create_local_cuda_repository(repository_ctx):
         ],
     ))
 
-    check_cuda_libs_script = repository_ctx.path(Label("@com_github_story_bazel_galaxy//third_party/gpus:check_cuda_libs.py"))
+    check_cuda_libs_script = repository_ctx.path(Label("//third_party/rules_cuda:check_cuda_libs.py"))
     cuda_libs = _find_libs(repository_ctx, check_cuda_libs_script, cuda_config)
     cuda_lib_srcs = []
     cuda_lib_outs = []
@@ -412,11 +408,8 @@ def _create_local_cuda_repository(repository_ctx):
             "cudnn_version.h",
         ]
 
-    cudnn_srcs = []
-    cudnn_outs = []
-    for header in cudnn_headers:
-        cudnn_srcs.append(cudnn_header_dir + "/" + header)
-        cudnn_outs.append("cudnn/include/" + header)
+    cudnn_srcs = ["{}/{}".format(cudnn_header_dir, header) for header in cudnn_headers]
+    cudnn_outs = ["cudnn/include/{}".format(header) for header in cudnn_headers]
 
     copy_rules.append(make_copy_files_rule(
         repository_ctx,
@@ -431,7 +424,7 @@ def _create_local_cuda_repository(repository_ctx):
 
     repository_ctx.template(
         "cuda/BUILD",
-        tpl_paths["cuda:BUILD"],
+        cuda_tpl_path,
         {
             "%{copy_rules}": "\n".join(copy_rules),
             "%{cub_actual}": cub_actual,
@@ -467,7 +460,6 @@ def _cuda_autoconf_impl(repository_ctx):
     cuda_path = repository_ctx.os.environ.get("CUDA_PATH", cuda_path)
 
     if repository_ctx.path(cuda_path).exists:
-        print("local_config_cuda2")
         _create_local_cuda_repository(repository_ctx)
         cuda_build_defs_bzl = Label("//third_party/gpus/cuda:build_defs.bzl")
         repository_ctx.symlink(cuda_build_defs_bzl, "cuda/build_defs.bzl")
