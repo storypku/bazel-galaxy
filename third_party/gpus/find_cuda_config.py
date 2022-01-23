@@ -270,7 +270,6 @@ def _find_cublas_config(base_paths, cuda_version):
                                                    get_header_version)
         # cuBLAS uses the major version only.
         cublas_version = header_version.split(".")[0]
-
     else:
         # There is no version info available before CUDA 10.1, just find the file.
         header_version = cuda_version
@@ -279,6 +278,8 @@ def _find_cublas_config(base_paths, cuda_version):
         cublas_version = cuda_version
 
     library_path = _find_library(base_paths, "cublas", cublas_version)
+    debug("cublas: version={}, header={}, library={}".format(
+        header_version, header_path, library_path))
 
     return {
         "cublas_version": header_version,
@@ -309,6 +310,8 @@ def _find_cusolver_config(base_paths, cuda_version):
         cusolver_version = cuda_version
 
     library_path = _find_library(base_paths, "cusolver", cusolver_version)
+    debug("cusolver: version={} header={}, library={}".format(
+        cusolver_version, header_path, library_path))
 
     return {
         "cusolver_version": header_version,
@@ -337,6 +340,8 @@ def _find_curand_config(base_paths, cuda_version):
         curand_version = cuda_version
 
     library_path = _find_library(base_paths, "curand", curand_version)
+    debug("curand: version={}, header={}, library={}".format(
+        header_version, header_path, library_path))
 
     return {
         "curand_version": header_version,
@@ -365,34 +370,13 @@ def _find_cufft_config(base_paths, cuda_version):
         cufft_version = cuda_version
 
     library_path = _find_library(base_paths, "cufft", cufft_version)
+    debug("cufft: version={}, header={} library={}".format(
+        header_version, header_path, library_path))
 
     return {
         "cufft_version": header_version,
         "cufft_include_dir": os.path.dirname(header_path),
         "cufft_library_dir": os.path.dirname(library_path),
-    }
-
-
-def _find_cudnn_config(base_paths):
-
-    def get_header_version(path):
-        version = [
-            _get_header_version(path, name)
-            for name in ("CUDNN_MAJOR", "CUDNN_MINOR", "CUDNN_PATCHLEVEL")
-        ]
-        return ".".join(version) if version[0] else None
-
-    header_path, header_version = _find_header(base_paths,
-                                               ("cudnn.h", "cudnn_version.h"),
-                                               get_header_version)
-    cudnn_version = header_version.split(".")[0]
-
-    library_path = _find_library(base_paths, "cudnn", cudnn_version)
-
-    return {
-        "cudnn_version": cudnn_version,
-        "cudnn_include_dir": os.path.dirname(header_path),
-        "cudnn_library_dir": os.path.dirname(library_path),
     }
 
 
@@ -416,11 +400,117 @@ def _find_cusparse_config(base_paths, cuda_version):
         cusparse_version = cuda_version
 
     library_path = _find_library(base_paths, "cusparse", cusparse_version)
+    debug("cusparse: version={}, header={} library={}".format(
+        header_version, header_path, library_path))
 
     return {
         "cusparse_version": header_version,
         "cusparse_include_dir": os.path.dirname(header_path),
         "cusparse_library_dir": os.path.dirname(library_path),
+    }
+
+
+def _find_nvml_config(base_paths, cuda_version):
+
+    def get_header_version(path):
+        return _get_header_version(path, "NVML_API_VERSION")
+
+    header_path, header_version = _find_header(base_paths, "nvml.h",
+                                               get_header_version)
+    library_path = _find_library(base_paths, "nvidia-ml", "")
+    debug("nvml: version={}, header={} library={}".format(
+        header_version, header_path, library_path))
+
+    return {
+        "nvml_version": header_version,
+        "nvml_include_dir": os.path.dirname(header_path),
+        "nvml_library_dir": os.path.dirname(library_path),
+    }
+
+
+def _find_nvjpeg_config(base_paths, cuda_version):
+
+    if _at_least_version(cuda_version, "11.0"):
+
+        def get_header_version(path):
+            version = (_get_header_version(path, name)
+                       for name in ("NVJPEG_VER_MAJOR", "NVJPEG_VER_MINOR",
+                                    "NVJPEG_VER_PATCH"))
+            return ".".join(version)
+
+        header_path, header_version = _find_header(base_paths, "nvjpeg.h",
+                                                   get_header_version)
+        cusparse_version = header_version.split(".")[0]
+
+    else:  # TODO(storypku): to be checked on Xavier w/ CUDA 10.2
+        header_version = cuda_version
+        header_path = _find_file(base_paths, _HEADER_REL_PATHS, "nvjpeg.h")
+        cusparse_version = cuda_version
+
+    library_path = _find_library(base_paths, "nvjpeg", cusparse_version)
+    debug("nvjpeg: version={}, header={} library={}".format(
+        header_version, header_path, library_path))
+
+    return {
+        "nvjpeg_version": header_version,
+        "nvjpeg_include_dir": os.path.dirname(header_path),
+        "nvjpeg_library_dir": os.path.dirname(library_path),
+    }
+
+
+def _find_npp_config(base_paths, cuda_version):
+
+    if _at_least_version(cuda_version, "11.0"):
+
+        def get_header_version(path):
+            version = (_get_header_version(path, name)
+                       for name in ("NPP_VER_MAJOR", "NPP_VER_MINOR",
+                                    "NPP_VER_PATCH"))
+            return ".".join(version)
+
+        header_path, header_version = _find_header(base_paths, "npp.h",
+                                                   get_header_version)
+        cusparse_version = header_version.split(".")[0]
+
+    else:  # TODO(storypku): to be checked on Xavier w/ CUDA 10.2
+        header_version = cuda_version
+        header_path = _find_file(base_paths, _HEADER_REL_PATHS, "npp.h")
+        cusparse_version = cuda_version
+
+    # nppc/nppial/nppicc/nppidei/nppif/nppig/nppim/nppist/nppisu/nppitc/npps
+    library_path = _find_library(base_paths, "nppc", cusparse_version)
+    debug("npp: version={}, header={} library={}".format(
+        header_version, header_path, library_path))
+
+    return {
+        "npp_version": header_version,
+        "npp_include_dir": os.path.dirname(header_path),
+        "npp_library_dir": os.path.dirname(library_path),
+    }
+
+
+def _find_cudnn_config(base_paths):
+
+    def get_header_version(path):
+        version = [
+            _get_header_version(path, name)
+            for name in ("CUDNN_MAJOR", "CUDNN_MINOR", "CUDNN_PATCHLEVEL")
+        ]
+        return ".".join(version) if version[0] else None
+
+    header_path, header_version = _find_header(base_paths,
+                                               ("cudnn.h", "cudnn_version.h"),
+                                               get_header_version)
+    cudnn_version = header_version.split(".")[0]
+
+    library_path = _find_library(base_paths, "cudnn", cudnn_version)
+    debug("cudnn, version={}, header={}, library={}".format(
+        header_version, header_path, library_path))
+
+    return {
+        "cudnn_version": cudnn_version,
+        "cudnn_include_dir": os.path.dirname(header_path),
+        "cudnn_library_dir": os.path.dirname(library_path),
     }
 
 
@@ -436,6 +526,8 @@ def _find_nccl_config(base_paths):
     nccl_version = header_version.split(".")[0]
 
     library_path = _find_library(base_paths, "nccl", nccl_version)
+    debug("nccl: version={}, header={}, library={}".format(
+        header_version, header_path, library_path))
 
     return {
         "nccl_version": nccl_version,
@@ -462,6 +554,8 @@ def _find_tensorrt_config(base_paths):
 
     tensorrt_version = header_version.split(".")[0]
     library_path = _find_library(base_paths, "nvinfer", tensorrt_version)
+    debug("tensorrt: version={}, header={}, library={}".format(
+        header_version, header_path, library_path))
 
     return {
         "tensorrt_version": tensorrt_version,
@@ -518,12 +612,15 @@ def find_cuda_config():
     if "cuda" in libraries:
         result.update(_find_cuda_config(base_paths))
         cuda_version = result["cuda_version"]
-
         result.update(_find_cublas_config(base_paths, cuda_version))
         result.update(_find_cusolver_config(base_paths, cuda_version))
         result.update(_find_curand_config(base_paths, cuda_version))
         result.update(_find_cufft_config(base_paths, cuda_version))
         result.update(_find_cusparse_config(base_paths, cuda_version))
+        if platform.machine() == "x86_64":
+            result.update(_find_nvml_config(base_paths, cuda_version))
+            result.update(_find_nvjpeg_config(base_paths, cuda_version))
+        result.update(_find_npp_config(base_paths, cuda_version))
 
     if "cudnn" in libraries:
         result.update(_find_cudnn_config(base_paths))
