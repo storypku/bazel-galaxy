@@ -1,0 +1,22 @@
+load("//bazel/rules:cuda.bzl", "cuda_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+# FIXME(storypku): Not runnable yet.
+# 1) It requires statically linked cufft_static and culibos .
+# 2) Even if we workaround the static linking issue, either by the ugly approach here, or by implementing
+#   "@local_config_cuda//cuda:cufft_static", it fails at the linking stage.
+cuda_binary(
+    name = "simpleCUFFT_callback",
+    srcs = ["simpleCUFFT_callback.cu"],
+    linkopts = [
+        "-L/usr/local/cuda/lib64",
+        "-lcufft_static",
+        "-lculibos",
+    ],
+    deps = [
+        "//examples/cuda/common:cuda_helper",
+        "//examples/cuda/common:cufft_helper",
+        "//examples/cuda/common:image_helper",
+    ],
+)

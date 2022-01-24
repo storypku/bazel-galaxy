@@ -8,7 +8,6 @@ cuda_library(
     hdrs = ["batchCUBLAS.h"],
     deps = [
         "//examples/cuda/common:cuda_helper",
-        "@local_config_cuda//cuda:cublas_headers",
         "@local_config_cuda//cuda:cublas",
     ],
 )

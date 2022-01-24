@@ -26,3 +26,40 @@ cc_test(
         "@com_google_googletest//:gtest_main",
     ],
 )
+
+cc_library(
+    name = "image_helper",
+    srcs = ["image_helper.cc"],
+    hdrs = ["image_helper.h"],
+    deps = [
+        ":cuda_helper",
+    ],
+)
+
+cc_library(
+    name = "cufft_helper",
+    srcs = ["cufft_helper.cc"],
+    hdrs = ["cufft_helper.h"],
+    deps = [
+        "@local_config_cuda//cuda:cufft",
+    ],
+)
+
+cc_library(
+    name = "cusparse_helper",
+    srcs = ["cusparse_helper.cc"],
+    hdrs = ["cusparse_helper.h"],
+    deps = [
+        "@local_config_cuda//cuda:cusparse",
+    ],
+)
+
+cuda_library(
+    name = "cusolver_helper",
+    srcs = ["cusolver_helper.cc"],
+    hdrs = ["cusolver_helper.h"],
+    deps = [
+        "@local_config_cuda//cuda:cusolver",
+        "@local_config_cuda//cuda:cusparse",
+    ],
+)

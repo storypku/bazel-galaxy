@@ -1,5 +1,3 @@
-# TODO(csigg): Only call once instead of from here, tensorrt_configure.bzl,
-# and nccl_configure.bzl.
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("//third_party:common.bzl", "err_out", "execute", "read_dir")
 
@@ -142,7 +140,8 @@ def _find_libs(repository_ctx, check_cuda_libs_script, cuda_config):
     paths = {filename: v[0] for (filename, v) in check_cuda_libs_params.items()}
     return paths
 
-
+# TODO(csigg): Only call once instead of from here, tensorrt_configure.bzl,
+# and nccl_configure.bzl.
 def find_cuda_config(repository_ctx, script_path, cuda_libraries):
     """Returns CUDA config dictionary from running find_cuda_config.py"""
     python_bin = repository_ctx.which("python3")
@@ -221,6 +220,7 @@ def _get_cuda_config(repository_ctx, find_cuda_config_script):
 
 def make_copy_files_rule(repository_ctx, name, srcs, outs):
     """Returns a rule to copy a set of files."""
+
     # Copy files.
     cmds = ['cp -f "{}" "$(location {})"'.format(src, out) for (src, out) in zip(srcs, outs)]
     outs = ['        "{}",'.format(out) for out in outs]
@@ -296,61 +296,6 @@ def _create_local_repository(repository_ctx):
             out_dir = "cuda/extras/CUPTI/include",
         ),
     ]
-
-    copy_rules.append(make_copy_files_rule(
-        repository_ctx,
-        name = "cublas-include",
-        srcs = [
-            cublas_include_path + "/cublas.h",
-            cublas_include_path + "/cublas_v2.h",
-            cublas_include_path + "/cublas_api.h",
-            cublas_include_path + "/cublasLt.h",
-        ],
-        outs = [
-            "cublas/include/cublas.h",
-            "cublas/include/cublas_v2.h",
-            "cublas/include/cublas_api.h",
-            "cublas/include/cublasLt.h",
-        ],
-    ))
-
-    cusolver_include_path = cuda_config.config["cusolver_include_dir"]
-    copy_rules.append(make_copy_files_rule(
-        repository_ctx,
-        name = "cusolver-include",
-        srcs = [
-            cusolver_include_path + "/cusolver_common.h",
-            cusolver_include_path + "/cusolverDn.h",
-        ],
-        outs = [
-            "cusolver/include/cusolver_common.h",
-            "cusolver/include/cusolverDn.h",
-        ],
-    ))
-
-    cufft_include_path = cuda_config.config["cufft_include_dir"]
-    copy_rules.append(make_copy_files_rule(
-        repository_ctx,
-        name = "cufft-include",
-        srcs = [
-            cufft_include_path + "/cufft.h",
-        ],
-        outs = [
-            "cufft/include/cufft.h",
-        ],
-    ))
-
-    cusparse_include_path = cuda_config.config["cusparse_include_dir"]
-    copy_rules.append(make_copy_files_rule(
-        repository_ctx,
-        name = "cusparse-include",
-        srcs = [
-            cusparse_include_path + "/cusparse.h",
-        ],
-        outs = [
-            "cusparse/include/cusparse.h",
-        ],
-    ))
 
     curand_include_path = cuda_config.config["curand_include_dir"]
     copy_rules.append(make_copy_files_rule(

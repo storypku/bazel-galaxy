@@ -52,8 +52,9 @@
 /* Matrix size */
 #define N (275)
 
+namespace {
 /* Host implementation of a simple version of sgemm */
-static void simple_sgemm(int n, float alpha, const float* A, const float* B,
+void simple_sgemm(int n, float alpha, const float* A, const float* B,
                          float beta, float* C) {
   int i;
   int j;
@@ -72,7 +73,8 @@ static void simple_sgemm(int n, float alpha, const float* A, const float* B,
   }
 }
 
-/* Main */
+} // namespace
+
 int main(int argc, char** argv) {
   cublasStatus_t status;
   float* h_A;

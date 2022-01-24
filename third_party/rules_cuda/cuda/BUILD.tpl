@@ -40,71 +40,43 @@ cc_library(
     linkstatic = 1,
 )
 
-# cuda_header_library(
+# Done
 cc_library(
-    name = "cublas_headers",
-    hdrs = [":cublas-include"],
+    name = "cublas",
+    srcs = ["cuda/lib/%{cublas_lib}"],
+    linkstatic = 1,
     deps = [
         "@local_cuda//:cuda_headers",
     ],
 )
 
-cuda_header_library(
-    name = "cusolver_headers",
-    hdrs = [":cusolver-include"],
-    include_prefix = "third_party/gpus/cuda/include",
-    includes = ["cusolver/include"],
-    strip_include_prefix = "cusolver/include",
-    deps = [":cuda_headers"],
-)
-
-cuda_header_library(
-    name = "cufft_headers",
-    hdrs = [":cufft-include"],
-    include_prefix = "third_party/gpus/cuda/include",
-    includes = ["cufft/include"],
-    strip_include_prefix = "cufft/include",
-    deps = [":cuda_headers"],
-)
-
-cuda_header_library(
-    name = "cusparse_headers",
-    hdrs = [":cusparse-include"],
-    include_prefix = "third_party/gpus/cuda/include",
-    includes = ["cusparse/include"],
-    strip_include_prefix = "cusparse/include",
-    deps = [":cuda_headers"],
-)
-
-cuda_header_library(
-    name = "curand_headers",
-    hdrs = [":curand-include"],
-    include_prefix = "third_party/gpus/cuda/include",
-    includes = ["curand/include"],
-    strip_include_prefix = "curand/include",
-    deps = [":cuda_headers"],
-)
-
-cc_library(
-    name = "cublas",
-    srcs = ["cuda/lib/%{cublas_lib}"],
-    data = ["cuda/lib/%{cublas_lib}"],
-    linkstatic = 1,
-)
-
 cc_library(
     name = "cublasLt",
     srcs = ["cuda/lib/%{cublasLt_lib}"],
-    data = ["cuda/lib/%{cublasLt_lib}"],
     linkstatic = 1,
+    deps = [
+        "@local_cuda//:cuda_headers",
+    ],
+)
+
+# Done
+cc_library(
+    name = "cufft",
+    srcs = ["cuda/lib/%{cufft_lib}"],
+    linkstatic = 1,
+    deps = [
+        "@local_cuda//:cuda_headers",
+    ],
 )
 
 cc_library(
     name = "cusolver",
     srcs = ["cuda/lib/%{cusolver_lib}"],
-    data = ["cuda/lib/%{cusolver_lib}"],
     linkopts = ["-lgomp"],
     linkstatic = 1,
+    deps = [
+        "@local_cuda//:cuda_headers",
+    ],
 )
 
 cc_library(
@@ -119,21 +91,18 @@ cc_library(
     hdrs = [":cudnn-include"],
     include_prefix = "third_party/gpus/cudnn",
     strip_include_prefix = "cudnn/include",
-    deps = [":cuda_headers"],
-)
-
-cc_library(
-    name = "cufft",
-    srcs = ["cuda/lib/%{cufft_lib}"],
-    data = ["cuda/lib/%{cufft_lib}"],
-    linkstatic = 1,
+    deps = [
+        "@local_cuda//:cuda_headers",
+    ],
 )
 
 cc_library(
     name = "curand",
     srcs = ["cuda/lib/%{curand_lib}"],
-    data = ["cuda/lib/%{curand_lib}"],
     linkstatic = 1,
+    deps = [
+        "@local_cuda//:cuda_headers",
+    ],
 )
 
 cc_library(
@@ -141,11 +110,10 @@ cc_library(
     deps = [
         ":cublas",
         ":cublasLt",
-        ":cuda_headers",
         ":cudart",
-        ":cudnn",
         ":cufft",
         ":curand",
+        "@local_cuda//:cuda_headers",
     ],
 )
 
@@ -170,9 +138,11 @@ cc_library(
 cc_library(
     name = "cusparse",
     srcs = ["cuda/lib/%{cusparse_lib}"],
-    data = ["cuda/lib/%{cusparse_lib}"],
     linkopts = ["-lgomp"],
     linkstatic = 1,
+    deps = [
+        "@local_cuda//:cuda_headers",
+    ],
 )
 
 cc_library(
