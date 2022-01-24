@@ -69,6 +69,7 @@ cc_library(
     ],
 )
 
+# Done
 cc_library(
     name = "cusolver",
     srcs = ["cuda/lib/%{cusolver_lib}"],
@@ -96,6 +97,7 @@ cc_library(
     ],
 )
 
+# Done
 cc_library(
     name = "curand",
     srcs = ["cuda/lib/%{curand_lib}"],
@@ -115,11 +117,6 @@ cc_library(
         ":curand",
         "@local_cuda//:cuda_headers",
     ],
-)
-
-alias(
-    name = "cub_headers",
-    actual = "%{cub_actual}",
 )
 
 cuda_header_library(

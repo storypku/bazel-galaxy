@@ -362,7 +362,7 @@ def _create_local_repository(repository_ctx):
     if int(cuda_config.cuda_version_major) >= 11:
         cub_actual = ":cuda_headers"
 
-    cuda_build_defs_bzl = Label("//third_party/gpus/cuda:build_defs.bzl")
+    cuda_build_defs_bzl = Label("//third_party/rules_cuda/cuda:build_defs.bzl")
     repository_ctx.symlink(cuda_build_defs_bzl, "cuda/build_defs.bzl")
 
     repository_ctx.template(
