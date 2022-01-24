@@ -55,7 +55,7 @@
 namespace {
 /* Host implementation of a simple version of sgemm */
 void simple_sgemm(int n, float alpha, const float* A, const float* B,
-                         float beta, float* C) {
+                  float beta, float* C) {
   int i;
   int j;
   int k;
@@ -73,7 +73,7 @@ void simple_sgemm(int n, float alpha, const float* A, const float* B,
   }
 }
 
-} // namespace
+}  // namespace
 
 int main(int argc, char** argv) {
   cublasStatus_t status;

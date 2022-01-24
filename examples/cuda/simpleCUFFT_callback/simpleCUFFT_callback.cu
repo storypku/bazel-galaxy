@@ -43,8 +43,8 @@
 #include "cuda/include/cufft.h"
 #include "cuda/include/cufftXt.h"
 #include "examples/cuda/common/cuda_helper.h"
-#include "examples/cuda/common/image_helper.h"
 #include "examples/cuda/common/cufft_helper.h"
+#include "examples/cuda/common/image_helper.h"
 
 // Complex data type
 typedef float2 Complex;

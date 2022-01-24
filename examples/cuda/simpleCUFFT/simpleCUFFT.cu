@@ -56,7 +56,7 @@ __device__ __host__ inline Complex ComplexMul(Complex a, Complex b) {
 
 // Complex pointwise multiplication
 __global__ void ComplexPointwiseMulAndScale(Complex* a, const Complex* b,
-                                                   int size, float scale) {
+                                            int size, float scale) {
   const int numThreads = blockDim.x * gridDim.x;
   const int threadID = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -65,7 +65,7 @@ __global__ void ComplexPointwiseMulAndScale(Complex* a, const Complex* b,
   }
 }
 
-} // namespace
+}  // namespace
 
 // The filter size is assumed to be a number smaller than the signal size
 #define SIGNAL_SIZE 50

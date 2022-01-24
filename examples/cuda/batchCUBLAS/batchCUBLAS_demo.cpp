@@ -23,7 +23,6 @@
 /* Using updated (v2) interfaces to cublas and cusparse */
 #include "cuda/include/cublas_v2.h"
 #include "cuda/include/cuda_runtime.h"
-
 #include "examples/cuda/batchCUBLAS/batchCUBLAS.h"
 #include "examples/cuda/common/cuda_helper.h"
 
