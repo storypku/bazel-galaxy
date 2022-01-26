@@ -399,6 +399,7 @@ def _local_config_cuda_impl(repository_ctx):
         repository_ctx.file("BUILD")
         _create_local_repository(repository_ctx)
     else:
+        print("Dummy @local_config_cuda repo as no CUDA installation found.")
         repository_ctx.file("BUILD")  # Empty file
 
 local_config_cuda = repository_rule(

@@ -1,4 +1,3 @@
-load("//bazel:rules_cuda.bzl", "cuda_binary", "cuda_library")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 
 package(default_visibility = ["//visibility:public"])
