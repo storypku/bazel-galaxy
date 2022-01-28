@@ -16,7 +16,6 @@ def cuda_library(name, **kwargs):
         **kwargs
     )
 
-# TODO(storypku): patch rules_cuda with cuda_binary rule.
 def cuda_binary(name, **kwargs):
     target_compatible_with = kwargs.pop("target_compatible_with", []) + requires_cuda_enabled()
     srcs = kwargs.pop("srcs", None)
@@ -31,8 +30,6 @@ def cuda_binary(name, **kwargs):
             **kwargs
         )
 
-        # Issues(Jiaming): deps was listed twice, one in cuda_library as shown above,
-        # one in the following cc_binary rule.
         deps = kwargs.pop("deps", []) + [virtual_lib]
         cc_binary(
             name = name,
@@ -42,4 +39,5 @@ def cuda_binary(name, **kwargs):
             **kwargs
         )
     else:
-        cc_binary(name = name, srcs = srcs, target_compatible_with = target_compatible_with, **kwargs)
+        deps = kwargs.pop("deps", []) + ["@rules_cuda//cuda:cuda_runtime"]
+        cc_binary(name = name, deps = deps, target_compatible_with = target_compatible_with, **kwargs)
