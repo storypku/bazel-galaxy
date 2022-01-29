@@ -80,16 +80,6 @@ cc_library(
     ],
 )
 
-cc_library(
-    name = "cudnn",
-    hdrs = [":cudnn-include"],
-    srcs = ["cuda/lib/%{cudnn_lib}"],
-    linkstatic = 1,
-    deps = [
-        "@local_cuda//:cuda_headers",
-    ],
-)
-
 # Done
 cc_library(
     name = "curand",

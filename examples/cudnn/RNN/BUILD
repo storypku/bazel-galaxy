@@ -13,6 +13,6 @@ cuda_binary(
     srcs = ["RNN_example.cu"],
     deps = [
         ":fp16_emu",
-        "@local_config_cuda//cuda:cudnn",
+        "@local_config_cuda//cudnn",
     ],
 )

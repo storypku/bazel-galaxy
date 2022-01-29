@@ -24,11 +24,15 @@ def lib_name(base_name, version = None, static = False):
         version = "." + version if version else ""
         return "lib{}.so{}".format(base_name, version)
 
+def _check_libs_script(repository_ctx):
+    return repository_ctx.path(Label("//third_party/rules_cuda:check_cuda_libs.py"))
+
 def _check_cuda_lib_params(lib, basedir, version, static = False):
     lib_path = "{}/{}".format(basedir, lib_name(lib, version, static))
     return (lib_path, version and not static)
 
 def _check_cuda_libs(repository_ctx, script_path, libs):
+    # Verify that the libs actually exist at their locations.
     python_bin = repository_ctx.which("python3")
     contents = repository_ctx.read(script_path).splitlines()
 
@@ -48,6 +52,23 @@ def _check_cuda_libs(repository_ctx, script_path, libs):
     checked_paths = [path for path in checked_paths if len(path) > 0]
     if all_paths != checked_paths:
         auto_configure_fail("Error with installed CUDA libs. Expected '%s'. Actual '%s'." % (all_paths, checked_paths))
+
+def _find_cudnn_libs(repository_ctx, cuda_config):
+    check_libs_params = {
+        "cudnn": _check_cuda_lib_params(
+            "cudnn",
+            cuda_config.config["cudnn_library_dir"],
+            cuda_config.cudnn_version,
+            static = False,
+        ),
+    }
+
+    check_libs_script = _check_libs_script(repository_ctx)
+
+    # Verify that the libs actually exist at their locations.
+    _check_cuda_libs(repository_ctx, check_libs_script, check_libs_params.values())
+    paths = {filename: v[0] for (filename, v) in check_libs_params.items()}
+    return paths
 
 def _find_libs(repository_ctx, check_cuda_libs_script, cuda_config):
     """Returns the CUDA and cuDNN libraries on the system.
@@ -96,12 +117,6 @@ def _find_libs(repository_ctx, check_cuda_libs_script, cuda_config):
             cuda_config.cudart_version,
             static = True,
         ),
-        "cudnn": _check_cuda_lib_params(
-            "cudnn",
-            cuda_config.config["cudnn_library_dir"],
-            cuda_config.cudnn_version,
-            static = False,
-        ),
         "cufft": _check_cuda_lib_params(
             "cufft",
             cuda_config.config["cufft_library_dir"],
@@ -134,7 +149,6 @@ def _find_libs(repository_ctx, check_cuda_libs_script, cuda_config):
         ),
     }
 
-    # Verify that the libs actually exist at their locations.
     _check_cuda_libs(repository_ctx, check_cuda_libs_script, check_cuda_libs_params.values())
 
     paths = {filename: v[0] for (filename, v) in check_cuda_libs_params.items()}
@@ -161,7 +175,6 @@ def _get_cuda_config(repository_ctx, find_cuda_config_script):
       Returns:
         A struct containing the following fields:
           cuda_toolkit_path: The CUDA toolkit installation directory.
-          cudnn_install_basedir: The cuDNN installation directory.
           cuda_version: The version of CUDA on the system.
           cudart_version: The CUDA runtime version on the system.
           cudnn_version: The version of cuDNN on the system.
@@ -265,13 +278,64 @@ def make_copy_dir_rule(repository_ctx, name, src_dir, out_dir, exceptions = None
 def _tpl_path(repository_ctx, filename):
     return repository_ctx.path(Label("//third_party/rules_cuda/{}.tpl".format(filename)))
 
+def _render_cudnn_template(repository_ctx, cuda_family_config):
+    cudnn_header_dir = cuda_family_config.config["cudnn_include_dir"]
+
+    # Select the headers based on the cuDNN version
+    cudnn_headers = ["cudnn.h"]
+    if cuda_family_config.cudnn_version.rsplit("_", 1)[-1] >= "8":
+        cudnn_headers += [
+            "cudnn_backend.h",
+            "cudnn_adv_infer.h",
+            "cudnn_adv_train.h",
+            "cudnn_cnn_infer.h",
+            "cudnn_cnn_train.h",
+            "cudnn_ops_infer.h",
+            "cudnn_ops_train.h",
+            "cudnn_version.h",
+        ]
+
+    cudnn_srcs = ["{}/{}".format(cudnn_header_dir, header) for header in cudnn_headers]
+    cudnn_outs = ["cudnn/include/{}".format(header) for header in cudnn_headers]
+
+    copy_rules = [
+        make_copy_files_rule(
+            repository_ctx,
+            name = "cudnn-include",
+            srcs = cudnn_srcs,
+            outs = cudnn_outs,
+        ),
+    ]
+
+    cudnn_libs = _find_cudnn_libs(repository_ctx, cuda_family_config)
+    cudnn_lib_srcs = []
+    cudnn_lib_outs = []
+    for path in cudnn_libs.values():
+        cudnn_lib_srcs.append(path)
+        cudnn_lib_outs.append("cudnn/lib/" + paths.basename(path))
+
+    copy_rules.append(make_copy_files_rule(
+        repository_ctx,
+        name = "cudnn-lib",
+        srcs = cudnn_lib_srcs,
+        outs = cudnn_lib_outs,
+    ))
+
+    repository_ctx.template(
+        "cudnn/BUILD",
+        _tpl_path(repository_ctx, "cudnn:BUILD"),
+        {
+            "%{copy_rules}": "\n\n".join(copy_rules),
+            "%{cudnn_lib}": paths.basename(cudnn_libs["cudnn"]),
+        },
+    )
+
 def _create_local_repository(repository_ctx):
     find_cuda_config_script = repository_ctx.path(Label("//third_party/rules_cuda:find_cuda_config.py"))
     cuda_config = _get_cuda_config(repository_ctx, find_cuda_config_script)
 
     cuda_include_path = cuda_config.config["cuda_include_dir"]
     cublas_include_path = cuda_config.config["cublas_include_dir"]
-    cudnn_header_dir = cuda_config.config["cudnn_include_dir"]
     cupti_header_dir = cuda_config.config["cupti_include_dir"]
     nvvm_libdevice_dir = cuda_config.config["nvvm_library_dir"]
 
@@ -309,7 +373,7 @@ def _create_local_repository(repository_ctx):
         ],
     ))
 
-    check_cuda_libs_script = repository_ctx.path(Label("//third_party/rules_cuda:check_cuda_libs.py"))
+    check_cuda_libs_script = _check_libs_script(repository_ctx)
     cuda_libs = _find_libs(repository_ctx, check_cuda_libs_script, cuda_config)
     cuda_lib_srcs = []
     cuda_lib_outs = []
@@ -334,34 +398,6 @@ def _create_local_repository(repository_ctx):
         outs = ["cuda/bin/" + f for f in bin_files],
     ))
 
-    # Select the headers based on the cuDNN version
-    cudnn_headers = ["cudnn.h"]
-    if cuda_config.cudnn_version.rsplit("_", 1)[-1] >= "8":
-        cudnn_headers += [
-            "cudnn_backend.h",
-            "cudnn_adv_infer.h",
-            "cudnn_adv_train.h",
-            "cudnn_cnn_infer.h",
-            "cudnn_cnn_train.h",
-            "cudnn_ops_infer.h",
-            "cudnn_ops_train.h",
-            "cudnn_version.h",
-        ]
-
-    cudnn_srcs = ["{}/{}".format(cudnn_header_dir, header) for header in cudnn_headers]
-    cudnn_outs = ["cudnn/include/{}".format(header) for header in cudnn_headers]
-
-    copy_rules.append(make_copy_files_rule(
-        repository_ctx,
-        name = "cudnn-include",
-        srcs = cudnn_srcs,
-        outs = cudnn_outs,
-    ))
-
-    cub_actual = "@cub_archive//:cub"
-    if int(cuda_config.cuda_version_major) >= 11:
-        cub_actual = ":cuda_headers"
-
     cuda_build_defs_bzl = Label("//third_party/rules_cuda/cuda:build_defs.bzl")
     repository_ctx.symlink(cuda_build_defs_bzl, "cuda/build_defs.bzl")
 
@@ -370,13 +406,11 @@ def _create_local_repository(repository_ctx):
         _tpl_path(repository_ctx, "cuda:BUILD"),
         {
             "%{copy_rules}": "\n".join(copy_rules),
-            "%{cub_actual}": cub_actual,
             "%{cublasLt_lib}": paths.basename(cuda_libs["cublasLt"]),
             "%{cublas_lib}": paths.basename(cuda_libs["cublas"]),
             "%{cuda_driver_lib}": paths.basename(cuda_libs["cuda"]),
             "%{cudart_lib}": paths.basename(cuda_libs["cudart"]),
             "%{cudart_static_lib}": paths.basename(cuda_libs["cudart_static"]),
-            "%{cudnn_lib}": paths.basename(cuda_libs["cudnn"]),
             "%{cufft_lib}": paths.basename(cuda_libs["cufft"]),
             "%{cupti_lib}": paths.basename(cuda_libs["cupti"]),
             "%{curand_lib}": paths.basename(cuda_libs["curand"]),
@@ -384,6 +418,7 @@ def _create_local_repository(repository_ctx):
             "%{cusparse_lib}": paths.basename(cuda_libs["cusparse"]),
         },
     )
+    _render_cudnn_template(repository_ctx, cuda_config)
 
 def _local_config_cuda_impl(repository_ctx):
     # Path to CUDA Toolkit is
