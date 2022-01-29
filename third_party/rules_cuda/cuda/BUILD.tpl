@@ -82,16 +82,9 @@ cc_library(
 
 cc_library(
     name = "cudnn",
-    srcs = ["cuda/lib/%{cudnn_lib}"],
-    data = ["cuda/lib/%{cudnn_lib}"],
-    linkstatic = 1,
-)
-
-cc_library(
-    name = "cudnn_header",
     hdrs = [":cudnn-include"],
-    include_prefix = "third_party/gpus/cudnn",
-    strip_include_prefix = "cudnn/include",
+    srcs = ["cuda/lib/%{cudnn_lib}"],
+    linkstatic = 1,
     deps = [
         "@local_cuda//:cuda_headers",
     ],
