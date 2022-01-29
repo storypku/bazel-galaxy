@@ -9,10 +9,10 @@
  *
  */
 
-#include "cuda/include/cuda.h"
-#include <cudnn.h>
 #include <stdio.h>
 
+#include "cuda/include/cuda.h"
+#include "cudnn/include/cudnn.h"
 #include "examples/cudnn/RNN/fp16_emu.h"
 
 // Usage

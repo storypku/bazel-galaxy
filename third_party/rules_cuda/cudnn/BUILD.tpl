@@ -4,7 +4,7 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "cudnn",
-    srcs = ["cudnn/lib/%{cudnn_lib}"],
+    srcs = ["lib/%{cudnn_lib}"],
     hdrs = [":cudnn-include"],
     linkstatic = 1,
     deps = [
