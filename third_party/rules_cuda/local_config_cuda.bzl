@@ -154,14 +154,15 @@ def _find_cuda_libs(repository_ctx, check_cuda_libs_script, cuda_config):
     paths = {filename: v[0] for (filename, v) in check_cuda_libs_params.items()}
     return paths
 
-# TODO(csigg, storypku): Only call once instead of from here, tensorrt_configure.bzl,
+# TODO(csigg): Only call once instead of from here, tensorrt_configure.bzl,
 # and nccl_configure.bzl.
 def find_cuda_family_config(repository_ctx, script_path, cuda_libraries):
     """Returns CUDA config dictionary from running find_cuda_config.py"""
     python_bin = repository_ctx.which("python3")
     exec_result = execute(repository_ctx, [python_bin, script_path] + cuda_libraries)
     if exec_result.return_code:
-        auto_configure_fail("Failed to run find_cuda_config.py: %s" % err_out(exec_result))
+        errmsg = err_out(exec_result)
+        auto_configure_fail("Failed to run find_cuda_config.py: {}".format(errmsg))
 
     # Parse the dict from stdout.
     return dict([tuple(x.split(": ")) for x in exec_result.stdout.splitlines()])
@@ -279,11 +280,18 @@ def _tpl_path(repository_ctx, filename):
     return repository_ctx.path(Label("//third_party/rules_cuda/{}.tpl".format(filename)))
 
 def _render_cudnn_template(repository_ctx, cudnn_config):
+    cudnn_version = cudnn_config.cudnn_version
+    if not cudnn_version:
+        print("Can't find cuDNN installation. Creating dummy cuDNN rule.")
+        cudnn_build_dummy = Label("//third_party/rules_cuda/cudnn:BUILD.dummy")
+        repository_ctx.symlink(cudnn_build_dummy, "cudnn/BUILD")
+        return
+
     cudnn_header_dir = cudnn_config.config["cudnn_include_dir"]
 
     # Select the headers based on the cuDNN version
     cudnn_headers = ["cudnn.h"]
-    if cudnn_config.cudnn_version.rsplit("_", 1)[-1] >= "8":
+    if cudnn_version.rsplit("_", 1)[-1] >= "8":
         cudnn_headers += [
             "cudnn_backend.h",
             "cudnn_adv_infer.h",
@@ -409,6 +417,7 @@ def _create_local_repository(repository_ctx):
     find_cuda_config_script = repository_ctx.path(Label("//third_party/rules_cuda:find_cuda_config.py"))
     cuda_config = _get_cuda_family_config(repository_ctx, find_cuda_config_script)
 
+    _render_cuda_template(repository_ctx, cuda_config)
     _render_cudnn_template(repository_ctx, cuda_config)
 
 def _local_config_cuda_impl(repository_ctx):
