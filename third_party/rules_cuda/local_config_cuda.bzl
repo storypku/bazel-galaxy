@@ -179,8 +179,9 @@ def _get_cuda_family_config(repository_ctx, find_cuda_config_script):
           cuda_version: The version of CUDA on the system.
           cudart_version: The CUDA runtime version on the system.
           cudnn_version: The version of cuDNN on the system.
+          nccl_version: The version of NCCL on the system.
       """
-    config = find_cuda_family_config(repository_ctx, find_cuda_config_script, ["cuda", "cudnn"])
+    config = find_cuda_family_config(repository_ctx, find_cuda_config_script, ["cuda", "cudnn", "nccl"])
     toolkit_path = config["cuda_toolkit_path"]
     cuda_version = config["cuda_version"].split(".")
     cuda_major = cuda_version[0]
@@ -188,6 +189,7 @@ def _get_cuda_family_config(repository_ctx, find_cuda_config_script):
 
     cuda_version = "{}.{}".format(cuda_major, cuda_minor)
     cudnn_version = config.get("cudnn_version", None)
+    nccl_version = config.get("nccl_version", None)
 
     if int(cuda_major) >= 11:
         # The libcudart soname in CUDA 11.x is versioned as 11.0 for backward compatability.
@@ -229,6 +231,7 @@ def _get_cuda_family_config(repository_ctx, find_cuda_config_script):
         cufft_version = cufft_version,
         cusparse_version = cusparse_version,
         cudnn_version = cudnn_version,
+        nccl_version = nccl_version,
         config = config,
     )
 
@@ -338,6 +341,21 @@ def _render_cudnn_template(repository_ctx, cudnn_config):
         },
     )
 
+def _render_nccl_template(repository_ctx, nccl_config):
+    nccl_version = nccl_config.nccl_version
+    if not nccl_version:
+        print("Can't find NCCL installation. Creating dummy NCCL rule.")
+        nccl_build_dummy = Label("//third_party/rules_cuda/nccl:BUILD.dummy")
+        repository_ctx.symlink(nccl_build_dummy, "nccl/BUILD")
+    else:
+        # Create target for locally installed NCCL.
+        config_wrap = {
+            "%{nccl_header_dir}": nccl_config.config["nccl_include_dir"],
+            "%{nccl_library_dir}": nccl_config.config["nccl_library_dir"],
+            "%{nccl_version}": nccl_version,
+        }
+        repository_ctx.template("nccl/BUILD", _tpl_path(repository_ctx, "nccl:system.BUILD"), config_wrap)
+
 def _render_cuda_template(repository_ctx, cuda_config):
     cuda_include_path = cuda_config.config["cuda_include_dir"]
     cublas_include_path = cuda_config.config["cublas_include_dir"]
@@ -419,6 +437,7 @@ def _create_local_repository(repository_ctx):
 
     _render_cuda_template(repository_ctx, cuda_config)
     _render_cudnn_template(repository_ctx, cuda_config)
+    _render_nccl_template(repository_ctx, cuda_config)
 
 def _local_config_cuda_impl(repository_ctx):
     # Path to CUDA Toolkit is
