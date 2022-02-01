@@ -1,22 +1,8 @@
-load(":build_defs.bzl", "cuda_header_library")
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 
 licenses(["restricted"])  # MPL2, portions GPL v3, LGPL v3, BSD-like
 
 package(default_visibility = ["//visibility:public"])
-
-# Provides CUDA headers for '#include "third_party/gpus/cuda/include/cuda.h"'
-# All clients including TensorFlow should use these directives.
-cuda_header_library(
-    name = "cuda_headers",
-    hdrs = [
-        ":cuda-include",
-    ],
-    include_prefix = "third_party/gpus",
-    includes = [
-        "cuda/include",
-    ],
-)
 
 cc_library(
     name = "cudart_static",
@@ -40,7 +26,6 @@ cc_library(
     linkstatic = 1,
 )
 
-# Done
 cc_library(
     name = "cublas",
     srcs = ["cuda/lib/%{cublas_lib}"],
@@ -59,7 +44,6 @@ cc_library(
     ],
 )
 
-# Done
 cc_library(
     name = "cufft",
     srcs = ["cuda/lib/%{cufft_lib}"],
@@ -69,7 +53,6 @@ cc_library(
     ],
 )
 
-# Done
 cc_library(
     name = "cusolver",
     srcs = ["cuda/lib/%{cusolver_lib}"],
@@ -80,7 +63,6 @@ cc_library(
     ],
 )
 
-# Done
 cc_library(
     name = "curand",
     srcs = ["cuda/lib/%{curand_lib}"],
@@ -100,14 +82,6 @@ cc_library(
         ":curand",
         "@local_cuda//:cuda_headers",
     ],
-)
-
-cuda_header_library(
-    name = "cupti_headers",
-    hdrs = [":cuda-extras"],
-    include_prefix = "third_party/gpus",
-    includes = ["cuda/extras/CUPTI/include/"],
-    deps = [":cuda_headers"],
 )
 
 cc_library(
@@ -131,14 +105,6 @@ cc_library(
 cc_library(
     name = "libdevice_root",
     data = [":cuda-nvvm"],
-)
-
-bzl_library(
-    name = "build_defs_bzl",
-    srcs = ["build_defs.bzl"],
-    deps = [
-        "@bazel_skylib//lib:selects",
-    ],
 )
 
 %{copy_rules}

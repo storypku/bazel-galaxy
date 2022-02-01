@@ -357,44 +357,17 @@ def _render_nccl_template(repository_ctx, nccl_config):
         repository_ctx.template("nccl/BUILD", _tpl_path(repository_ctx, "nccl:system.BUILD"), config_wrap)
 
 def _render_cuda_template(repository_ctx, cuda_config):
-    cuda_include_path = cuda_config.config["cuda_include_dir"]
-    cublas_include_path = cuda_config.config["cublas_include_dir"]
-    cupti_header_dir = cuda_config.config["cupti_include_dir"]
     nvvm_libdevice_dir = cuda_config.config["nvvm_library_dir"]
 
     # Create genrule to copy files from the installed CUDA toolkit into execroot.
     copy_rules = [
         make_copy_dir_rule(
             repository_ctx,
-            name = "cuda-include",
-            src_dir = cuda_include_path,
-            out_dir = "cuda/include",
-        ),
-        make_copy_dir_rule(
-            repository_ctx,
             name = "cuda-nvvm",
             src_dir = nvvm_libdevice_dir,
             out_dir = "cuda/nvvm/libdevice",
         ),
-        make_copy_dir_rule(
-            repository_ctx,
-            name = "cuda-extras",
-            src_dir = cupti_header_dir,
-            out_dir = "cuda/extras/CUPTI/include",
-        ),
     ]
-
-    curand_include_path = cuda_config.config["curand_include_dir"]
-    copy_rules.append(make_copy_files_rule(
-        repository_ctx,
-        name = "curand-include",
-        srcs = [
-            curand_include_path + "/curand.h",
-        ],
-        outs = [
-            "curand/include/curand.h",
-        ],
-    ))
 
     check_cuda_libs_script = _check_cuda_family_libs_script(repository_ctx)
     cuda_libs = _find_cuda_libs(repository_ctx, check_cuda_libs_script, cuda_config)
@@ -409,9 +382,6 @@ def _render_cuda_template(repository_ctx, cuda_config):
         srcs = cuda_lib_srcs,
         outs = cuda_lib_outs,
     ))
-
-    cuda_build_defs_bzl = Label("//third_party/rules_cuda/cuda:build_defs.bzl")
-    repository_ctx.symlink(cuda_build_defs_bzl, "cuda/build_defs.bzl")
 
     repository_ctx.template(
         "cuda/BUILD",

@@ -49,11 +49,6 @@
 
 #include "examples/cudnn/RNN/fp16_emu.h"
 
-#define STATIC_ASSERT(cond)                            \
-  do {                                                 \
-    typedef char compile_time_assert[(cond) ? 1 : -1]; \
-  } while (0)
-
 // Host functions for converting between FP32 and FP16 formats
 // Paulius Micikevicius (pauliusm@nvidia.com)
 
@@ -114,8 +109,6 @@ half1 cpu_float2half_rn(float f) {
 }
 
 float cpu_half2float(half1 h) {
-  STATIC_ASSERT(sizeof(int) == sizeof(float));
-
   __half_raw hr = reinterpret_cast<__half_raw&>(h);
 
   unsigned sign = ((hr.x >> 15) & 1);
