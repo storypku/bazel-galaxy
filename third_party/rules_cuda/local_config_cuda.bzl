@@ -387,7 +387,7 @@ def _render_cuda_template(repository_ctx, cuda_config):
         "cuda/BUILD",
         _tpl_path(repository_ctx, "cuda:BUILD"),
         {
-            "%{copy_rules}": "\n".join(copy_rules),
+            "%{copy_rules}": "\n\n".join(copy_rules),
             "%{cublasLt_lib}": paths.basename(cuda_libs["cublasLt"]),
             "%{cublas_lib}": paths.basename(cuda_libs["cublas"]),
             "%{cuda_driver_lib}": paths.basename(cuda_libs["cuda"]),
