@@ -702,7 +702,7 @@ void doTest(int seqLength, int numLayers, int hiddenSize, int inputSize,
 
     double checksumdw = 0.;
 
-    for (int i = 0; i < weightsSize / sizeof(T_ELEM); i++) {
+    for (size_t i = 0; i < weightsSize / sizeof(T_ELEM); i++) {
       checksumdw += (double)testOutputdw[i];
     }
 
