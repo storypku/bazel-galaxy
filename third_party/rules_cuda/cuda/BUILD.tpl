@@ -111,8 +111,11 @@ cuda_header_library(
 )
 
 cc_library(
-    name = "cupti_dsos",
-    data = ["cuda/lib/%{cupti_lib}"],
+    name = "cupti",
+    srcs = ["cuda/lib/%{cupti_lib}"],
+    deps = [
+        "@local_cuda//:cuda_headers",
+    ],
 )
 
 cc_library(
