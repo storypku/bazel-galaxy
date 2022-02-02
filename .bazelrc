@@ -1,5 +1,6 @@
 common --color=yes
 
+# build --incompatible_enable_cc_toolchain_resolution
 build --repo_env=CC=clang
 
 # For googletest to use absl
@@ -16,8 +17,9 @@ build:cuda_nvcc --@rules_cuda//cuda:compiler=nvcc
 build:cuda_nvcc --@rules_cuda//cuda:copts=-allow-unsupported-compiler
 
 build:gpu --cuda=yes
-build:gpu --config=cuda_clang
+build:gpu --config=cuda_nvcc
 build:gpu --@rules_cuda//cuda:cuda_runtime=@local_cuda//:cuda_runtime
+
 # Make this configurable for x86_64 and aarch64
 build:gpu --cuda_gpu_arch=sm_70,sm_75,sm_80,sm_86
 

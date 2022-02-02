@@ -20,4 +20,5 @@ def galaxy_dependencies():
     llvm_toolchain(
         name = "llvm_toolchain",
         llvm_version = "13.0.0",
+        # absolute_paths = True,
     )

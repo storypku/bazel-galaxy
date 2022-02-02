@@ -11,7 +11,7 @@ index 2114359..85e37f7 100644
      name = "llvm",
      flag_values = {
 -        "@bazel_tools//tools/cpp:compiler": "clang",
-+        "@rules_cuda//cuda:compiler": "clang",
++        "@bazel_tools//tools/cpp:compiler": "compiler",
      },
      visibility = [
          "//tcmalloc/internal:__subpackages__",
