@@ -1,6 +1,5 @@
 load("//third_party/absl:workspace.bzl", absl = "repo")
 load("//third_party/bazel_skylib:workspace.bzl", bazel_skylib = "repo")
-load("//third_party/bazel_toolchain:workspace.bzl", bazel_toolchain = "repo")
 load("//third_party/glog:workspace.bzl", glog = "repo")
 load("//third_party/googletest:workspace.bzl", googletest = "repo")
 load("//third_party/platforms:workspace.bzl", platforms = "repo")
@@ -19,8 +18,6 @@ def rules_lang_repos():
     rules_python()
     rules_cc()
     rules_cuda()
-
-    bazel_toolchain()
 
 def third_party_repos():
     absl()
