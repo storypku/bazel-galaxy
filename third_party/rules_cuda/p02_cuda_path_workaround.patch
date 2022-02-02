@@ -1,0 +1,13 @@
+diff --git a/third_party/rules_cuda/cuda/toolchain.bzl b/third_party/rules_cuda/cuda/toolchain.bzl
+index 57c9ace..bf0c425 100644
+--- a/third_party/rules_cuda/cuda/toolchain.bzl
++++ b/third_party/rules_cuda/cuda/toolchain.bzl
+@@ -31,7 +31,7 @@ def _cuda_toolchain_config(features, action_configs):
+ def _clang_cuda_toolchain_config(copts, cuda_targets):
+     flags = [
+         "--language=cuda",
+-        "--cuda-path=external/local_cuda/cuda",
++        "--cuda-path=/usr/local/cuda",
+     ] + copts
+     for cuda_target in cuda_targets:
+         flags.append("--cuda-gpu-arch=%s" % cuda_target)

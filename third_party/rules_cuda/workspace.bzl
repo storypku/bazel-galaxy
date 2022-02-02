@@ -13,5 +13,6 @@ def repo():
         patch_args = ["-p3"],
         patches = [
             clean_dep("//third_party/rules_cuda:p01_sm_86_support.patch"),
+            clean_dep("//third_party/rules_cuda:p02_cuda_path_workaround.patch"),
         ],
     )
