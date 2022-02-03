@@ -4,7 +4,7 @@ package(default_visibility = ["//visibility:public"])
 
 cc_binary(
     name = "example",
-    srcs = ["example.c"],
+    srcs = ["example.cc"],
     deps = [
         "@local_config_cuda//nvml",
     ],
@@ -12,7 +12,7 @@ cc_binary(
 
 cc_binary(
     name = "supportedVgpus",
-    srcs = ["supportedVgpus.c"],
+    srcs = ["supportedVgpus.cc"],
     deps = [
         "@local_config_cuda//nvml",
     ],

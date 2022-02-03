@@ -37,35 +37,46 @@
 |*                                                                           *|
 \***************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
 
 #include "nvml/include/nvml.h"
 
-int main(void) {
-  nvmlReturn_t result;
-  unsigned int device_count, i;
+namespace {
+const char* ComputeModeStringify(nvmlComputeMode_t mode) {
+  switch (mode) {
+    case NVML_COMPUTEMODE_DEFAULT:
+      return "Default";
+    case NVML_COMPUTEMODE_EXCLUSIVE_THREAD:
+      return "Exclusive_Thread";
+    case NVML_COMPUTEMODE_PROHIBITED:
+      return "Prohibited";
+    case NVML_COMPUTEMODE_EXCLUSIVE_PROCESS:
+      return "Exclusive Process";
+    default:
+      return "Unknown";
+  }
+}
 
+}  // namespace
+
+int main(void) {
   // First initialize NVML library
-  result = nvmlInit();
+  nvmlReturn_t result = nvmlInit();
   if (NVML_SUCCESS != result) {
     printf("Failed to initialize NVML: %s\n", nvmlErrorString(result));
-    return 1;
+    return -1;
   }
 
+  unsigned int device_count = 0;
   result = nvmlDeviceGetCount(&device_count);
   if (NVML_SUCCESS != result) {
     printf("Failed to query device count: %s\n", nvmlErrorString(result));
-    goto Error;
+    goto error;
   }
 
-  printf("Found %u device%s\n", device_count, device_count != 1 ? "s" : "");
-  printf("Listing devices:\n");
-
-  for (i = 0; i < device_count; i++) {
+  printf("Found %u device(s):\n", device_count);
+  for (unsigned int i = 0; i < device_count; i++) {
     nvmlDevice_t device;
-    char name[NVML_DEVICE_NAME_BUFFER_SIZE];
-    nvmlPciInfo_t pci;
 
     // Query for device handle to perform operations on a device
     // You can also query device handle by other features like:
@@ -75,79 +86,81 @@ int main(void) {
     if (NVML_SUCCESS != result) {
       printf("Failed to get handle for device %u: %s\n", i,
              nvmlErrorString(result));
-      goto Error;
+      goto error;
     }
 
-    result = nvmlDeviceGetName(device, name, NVML_DEVICE_NAME_BUFFER_SIZE);
+    char name[NVML_DEVICE_NAME_BUFFER_SIZE];
+    result = nvmlDeviceGetName(device, name, sizeof(name));
     if (NVML_SUCCESS != result) {
       printf("Failed to get name of device %u: %s\n", i,
              nvmlErrorString(result));
-      goto Error;
+      goto error;
     }
 
     // pci.busId is very useful to know which device physically you're talking
     // to Using PCI identifier you can also match nvmlDevice handle to CUDA
     // device.
+    nvmlPciInfo_t pci;
     result = nvmlDeviceGetPciInfo(device, &pci);
     if (NVML_SUCCESS != result) {
       printf("Failed to get pci info for device %u: %s\n", i,
              nvmlErrorString(result));
-      goto Error;
+      goto error;
     }
 
-    printf("%u. %s [%s]\n", i, name, pci.busId);
+    printf("  %u. %s [%s]\n", i, name, pci.busId);
 
-    // This is an example to get the supported vGPUs type names
-    unsigned int vgpuCount = 0;
-    nvmlVgpuTypeId_t* vgpuTypeIds = NULL;
-    unsigned int j;
-
-    result = nvmlDeviceGetSupportedVgpus(device, &vgpuCount, NULL);
-    if (NVML_ERROR_INSUFFICIENT_SIZE != result) goto Error;
-
-    if (vgpuCount != 0) {
-      vgpuTypeIds = malloc(sizeof(nvmlVgpuTypeId_t) * vgpuCount);
-      if (!vgpuTypeIds) {
-        printf("Memory allocation of %d bytes failed \n",
-               (int)(sizeof(*vgpuTypeIds) * vgpuCount));
-        goto Error;
-      }
-
-      result = nvmlDeviceGetSupportedVgpus(device, &vgpuCount, vgpuTypeIds);
-      if (NVML_SUCCESS != result) {
-        printf("Failed to get the supported vGPUs with status %d \n",
-               (int)result);
-        goto Error;
-      }
-
-      printf("  Displaying vGPU type names: \n");
-      for (j = 0; j < vgpuCount; j++) {
-        char vgpuTypeName[NVML_DEVICE_NAME_BUFFER_SIZE];
-        unsigned int bufferSize = NVML_DEVICE_NAME_BUFFER_SIZE;
-
-        if (NVML_SUCCESS == (result = nvmlVgpuTypeGetName(
-                                 vgpuTypeIds[j], vgpuTypeName, &bufferSize))) {
-          printf("  %s\n", vgpuTypeName);
-        } else {
-          printf("Failed to query the vGPU type name with status %d \n",
-                 (int)result);
-        }
-      }
+    // This is a simple example on how you can modify GPU's state
+    nvmlComputeMode_t compute_mode;
+    result = nvmlDeviceGetComputeMode(device, &compute_mode);
+    if (NVML_ERROR_NOT_SUPPORTED == result) {
+      printf("\t This is not CUDA capable device\n");
+      goto error;
+    } else if (NVML_SUCCESS != result) {
+      printf("Failed to get compute mode for device %u: %s\n", i,
+             nvmlErrorString(result));
+      goto error;
     }
-    if (vgpuTypeIds) free(vgpuTypeIds);
+
+    // try to change compute mode
+    printf("\tChanging device's compute mode from '%s' to '%s'\n",
+           ComputeModeStringify(compute_mode),
+           ComputeModeStringify(NVML_COMPUTEMODE_PROHIBITED));
+
+    result = nvmlDeviceSetComputeMode(device, NVML_COMPUTEMODE_PROHIBITED);
+    if (NVML_ERROR_NO_PERMISSION == result) {
+      printf("\t\tNeed root privileges to do that: %s\n",
+             nvmlErrorString(result));
+    } else if (NVML_ERROR_NOT_SUPPORTED == result) {
+      printf("\t\tCompute mode prohibited not supported.\n");
+    } else if (NVML_SUCCESS != result) {
+      printf("\t\tFailed to set compute mode for device %u: %s\n", i,
+             nvmlErrorString(result));
+      goto error;
+    }
+
+    printf("\tRestoring device's compute mode back to '%s'\n",
+           ComputeModeStringify(compute_mode));
+
+    result = nvmlDeviceSetComputeMode(device, compute_mode);
+    if (NVML_SUCCESS != result) {
+      printf("\t\tFailed to restore compute mode for device %u: %s\n", i,
+             nvmlErrorString(result));
+      goto error;
+    }
   }
 
+error:
+  bool success = result == NVML_SUCCESS;
+
   result = nvmlShutdown();
-  if (NVML_SUCCESS != result)
+  if (NVML_SUCCESS != result) {
     printf("Failed to shutdown NVML: %s\n", nvmlErrorString(result));
+  }
 
-  printf("All done.\n");
-  return 0;
-
-Error:
-  result = nvmlShutdown();
-  if (NVML_SUCCESS != result)
-    printf("Failed to shutdown NVML: %s\n", nvmlErrorString(result));
-
-  return 1;
+  if (success) {
+    printf("All done.\n");
+    return 0;
+  }
+  return -1;
 }
