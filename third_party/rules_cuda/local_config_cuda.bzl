@@ -1,5 +1,5 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load("//third_party:common.bzl", "err_out", "execute", "read_dir")
+load("//third_party:common.bzl", "err_out", "execute")
 
 def auto_configure_fail(msg):
     """Output failure message when cuda configuration fails."""
@@ -249,36 +249,6 @@ def make_copy_files_rule(repository_ctx, name, srcs, outs):
     cmd = \"""{} \""",
 )""".format(name, "\n".join(outs), " && \\\n".join(cmds))
 
-def make_copy_dir_rule(repository_ctx, name, src_dir, out_dir, exceptions = None):
-    """Returns a rule to recursively copy a directory.
-    If exceptions is not None, it must be a list of files or directories in
-    'src_dir'; these will be excluded from copying.
-    """
-    src_dir = paths.normalize(src_dir)
-    out_dir = paths.normalize(out_dir)
-    outs = read_dir(repository_ctx, src_dir)
-    post_cmd = ""
-    if exceptions != None:
-        outs = [x for x in outs if not any([
-            x.startswith(src_dir + "/" + y)
-            for y in exceptions
-        ])]
-    outs = [('        "%s",' % out.replace(src_dir, out_dir)) for out in outs]
-
-    # '@D' already contains the relative path for a single file, see
-    # http://docs.bazel.build/versions/master/be/make-variables.html#predefined_genrule_variables
-    out_dir = "$(@D)/%s" % out_dir if len(outs) > 1 else "$(@D)"
-    if exceptions != None:
-        for x in exceptions:
-            post_cmd += " ; rm -fR " + out_dir + "/" + x
-    return """genrule(
-    name = "%s",
-    outs = [
-%s
-    ],
-    cmd = \"""cp -rLf "%s/." "%s/" %s\""",
-)""" % (name, "\n".join(outs), src_dir, out_dir, post_cmd)
-
 def _tpl_path(repository_ctx, filename):
     return repository_ctx.path(Label("//third_party/rules_cuda/{}.tpl".format(filename)))
 
@@ -357,17 +327,8 @@ def _render_nccl_template(repository_ctx, nccl_config):
         repository_ctx.template("nccl/BUILD", _tpl_path(repository_ctx, "nccl:system.BUILD"), config_wrap)
 
 def _render_cuda_template(repository_ctx, cuda_config):
-    nvvm_libdevice_dir = cuda_config.config["nvvm_library_dir"]
-
     # Create genrule to copy files from the installed CUDA toolkit into execroot.
-    copy_rules = [
-        make_copy_dir_rule(
-            repository_ctx,
-            name = "cuda-nvvm",
-            src_dir = nvvm_libdevice_dir,
-            out_dir = "cuda/nvvm/libdevice",
-        ),
-    ]
+    copy_rules = []
 
     check_cuda_libs_script = _check_cuda_family_libs_script(repository_ctx)
     cuda_libs = _find_cuda_libs(repository_ctx, check_cuda_libs_script, cuda_config)

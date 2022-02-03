@@ -1,9 +1,6 @@
 load("//third_party:common.bzl", "err_out", "execute")
 
-def _label(filename):
-    return Label("//third_party/llvm_toolchain:{}".format(filename))
-
-LLVM_BINARIES = [
+_LLVM_BINARIES = [
     "clang",
     "clang-cpp",
     "ld.lld",
@@ -20,8 +17,13 @@ LLVM_BINARIES = [
     "llvm-symbolizer",
 ]
 
+_LLVM_VERSION_MINIMAL = "10.0.0"
+
+def _label(filename):
+    return Label("//third_party/llvm_toolchain:{}".format(filename))
+
 def _check_llvm_binaries(repository_ctx, llvm_dir):
-    for binary in LLVM_BINARIES:
+    for binary in _LLVM_BINARIES:
         binary_path = "{}/bin/{}".format(llvm_dir, binary)
         if not repository_ctx.path(binary_path).exists:
             fail("{} doesn't exist".format(binary_path))
@@ -32,6 +34,11 @@ def _retrieve_clang_version(repository_ctx, clang_binary):
     result = execute(repository_ctx, [python_bin, script_path, clang_binary])
     if result.return_code:
         fail("Failed to run find_clang_version.py: {}".format(err_out(result)))
+    llvm_version = result.stdout.strip()
+    actual_version = [int(m) for m in llvm_version.split(".")]
+    minimal_version = [int(m) for m in _LLVM_VERSION_MINIMAL.split(".")]
+    if actual_version < minimal_version:
+        fail("Minimal llvm version supported is {}, got: {}".format(_LLVM_VERSION_MINIMAL, llvm_version))
     return result.stdout.strip()
 
 def _local_config_llvm_impl(repository_ctx):
@@ -69,7 +76,7 @@ def _local_config_llvm_impl(repository_ctx):
 
 local_config_llvm = repository_rule(
     implementation = _local_config_llvm_impl,
-    environ = ["LLVM_DIR", "PATH"],
+    environ = ["LLVM_DIR"],
     local = True,
     # remotable = True,
 )

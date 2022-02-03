@@ -1,5 +1,3 @@
-load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-
 licenses(["restricted"])  # MPL2, portions GPL v3, LGPL v3, BSD-like
 
 package(default_visibility = ["//visibility:public"])
@@ -12,18 +10,26 @@ cc_library(
         "-lpthread",
         "-lrt",
     ],
+    deps = [
+        "@local_cuda//:cuda_headers",
+    ],
 )
 
 cc_library(
     name = "cuda_driver",
     srcs = ["cuda/lib/%{cuda_driver_lib}"],
+    deps = [
+        "@local_cuda//:cuda_headers",
+    ],
 )
 
 cc_library(
     name = "cudart",
     srcs = ["cuda/lib/%{cudart_lib}"],
-    data = ["cuda/lib/%{cudart_lib}"],
     linkstatic = 1,
+    deps = [
+        "@local_cuda//:cuda_headers",
+    ],
 )
 
 cc_library(
@@ -100,11 +106,6 @@ cc_library(
     deps = [
         "@local_cuda//:cuda_headers",
     ],
-)
-
-cc_library(
-    name = "libdevice_root",
-    data = [":cuda-nvvm"],
 )
 
 %{copy_rules}

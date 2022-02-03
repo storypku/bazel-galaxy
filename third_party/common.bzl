@@ -1,24 +1,3 @@
-def read_dir(repository_ctx, src_dir):
-    """Returns a sorted list with all files in a directory.
-
-    Finds all files inside a directory, traversing subfolders and following
-    symlinks.
-
-    Args:
-      repository_ctx: the repository_ctx
-      src_dir: the directory to traverse
-
-    Returns:
-      A sorted list with all files in a directory.
-    """
-    find_result = execute(
-        repository_ctx,
-        ["find", src_dir, "-follow", "-type", "f"],
-        allow_failure = True,
-    )
-    result = find_result.stdout
-    return sorted(result.splitlines())
-
 def execute(
         repository_ctx,
         cmdline,
@@ -57,3 +36,24 @@ def err_out(result):
     if len(result.stderr) == 0:
         return result.stdout
     return result.stderr
+
+def read_dir(repository_ctx, src_dir):
+    """Returns a sorted list with all files in a directory.
+
+    Finds all files inside a directory, traversing subfolders and following
+    symlinks.
+
+    Args:
+      repository_ctx: the repository_ctx
+      src_dir: the directory to traverse
+
+    Returns:
+      A sorted list with all files in a directory.
+    """
+    find_result = execute(
+        repository_ctx,
+        ["find", src_dir, "-follow", "-type", "f"],
+        allow_failure = True,
+    )
+    result = find_result.stdout
+    return sorted(result.splitlines())
