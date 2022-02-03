@@ -24,14 +24,11 @@ def lib_name(base_name, version = None, static = False):
         version = "." + version if version else ""
         return "lib{}.so{}".format(base_name, version)
 
-def _check_cuda_family_libs_script(repository_ctx):
-    return repository_ctx.path(Label("//third_party/rules_cuda:check_cuda_libs.py"))
-
 def _check_cuda_lib_params(lib, basedir, version, static = False):
     lib_path = "{}/{}".format(basedir, lib_name(lib, version, static))
     return (lib_path, version and not static)
 
-def _check_cuda_libs(repository_ctx, script_path, libs):
+def _check_cuda_family_libs(repository_ctx, script_path, libs):
     # Verify that the libs actually exist at their locations.
     python_bin = repository_ctx.which("python3")
     contents = repository_ctx.read(script_path).splitlines()
@@ -53,32 +50,19 @@ def _check_cuda_libs(repository_ctx, script_path, libs):
     if all_paths != checked_paths:
         auto_configure_fail("Error with installed CUDA libs. Expected '%s'. Actual '%s'." % (all_paths, checked_paths))
 
-def _find_cudnn_libs(repository_ctx, cuda_family_config):
-    check_libs_params = {
-        "cudnn": _check_cuda_lib_params(
-            "cudnn",
-            cuda_family_config.config["cudnn_library_dir"],
-            cuda_family_config.cudnn_version,
-            static = False,
-        ),
-    }
-
-    check_libs_script = _check_cuda_family_libs_script(repository_ctx)
-
-    # Verify that the libs actually exist at their locations.
-    _check_cuda_libs(repository_ctx, check_libs_script, check_libs_params.values())
-    paths = {filename: v[0] for (filename, v) in check_libs_params.items()}
+def _find_cuda_family_libs_impl(repository_ctx, params):
+    check_script = repository_ctx.path(Label("//third_party/rules_cuda:check_cuda_libs.py"))
+    _check_cuda_family_libs(repository_ctx, check_script, params.values())
+    paths = {filename: v[0] for (filename, v) in params.items()}
     return paths
 
-def _find_cuda_libs(repository_ctx, check_cuda_libs_script, cuda_config):
+def _find_cuda_libs(repository_ctx, cuda_config):
     """Returns the CUDA and cuDNN libraries on the system.
 
       Also, verifies that the script actually exist.
 
       Args:
         repository_ctx: The repository context.
-        check_cuda_libs_script: The path to a script verifying that the cuda
-          libraries exist on the system.
         cuda_config: The CUDA config as returned by _get_cuda_family_config
 
       Returns:
@@ -149,10 +133,30 @@ def _find_cuda_libs(repository_ctx, check_cuda_libs_script, cuda_config):
         ),
     }
 
-    _check_cuda_libs(repository_ctx, check_cuda_libs_script, check_cuda_libs_params.values())
+    return _find_cuda_family_libs_impl(repository_ctx, check_cuda_libs_params)
 
-    paths = {filename: v[0] for (filename, v) in check_cuda_libs_params.items()}
-    return paths
+def _find_cudnn_libs(repository_ctx, cuda_family_config):
+    cudnn_params = {
+        "cudnn": _check_cuda_lib_params(
+            "cudnn",
+            cuda_family_config.config["cudnn_library_dir"],
+            cuda_family_config.cudnn_version,
+            static = False,
+        ),
+    }
+
+    return _find_cuda_family_libs_impl(repository_ctx, cudnn_params)
+
+def _find_nvml_libs(repository_ctx, cuda_family_config):
+    nvml_params = {
+        "nvml": _check_cuda_lib_params(
+            "nvidia-ml",
+            cuda_family_config.config["nvml_library_dir"],
+            "1",
+            static = False,
+        ),
+    }
+    return _find_cuda_family_libs_impl(repository_ctx, nvml_params)
 
 # TODO(csigg): Only call once instead of from here, tensorrt_configure.bzl,
 # and nccl_configure.bzl.
@@ -252,6 +256,51 @@ def make_copy_files_rule(repository_ctx, name, srcs, outs):
 def _tpl_path(repository_ctx, filename):
     return repository_ctx.path(Label("//third_party/rules_cuda/{}.tpl".format(filename)))
 
+def _render_nvml_template(repository_ctx, nvml_config):
+    if "nvml_driver_version" not in nvml_config.config:
+        print("NVML not found. Creating dummy NVML rule")
+        nvml_build_dummy = Label("//third_party/rules_cuda/nvml:BUILD.dummy")
+        repository_ctx.symlink(nvml_build_dummy, "nvml/BUILD")
+        return
+
+    nvml_headers = ["nvml.h"]
+    nvml_include_dir = nvml_config.config["nvml_include_dir"]
+
+    nvml_srcs = ["{}/{}".format(nvml_include_dir, header) for header in nvml_headers]
+    nvml_outs = ["include/{}".format(header) for header in nvml_headers]
+
+    copy_rules = [
+        make_copy_files_rule(
+            repository_ctx,
+            name = "nvml-include",
+            srcs = nvml_srcs,
+            outs = nvml_outs,
+        ),
+    ]
+
+    nvml_libs = _find_nvml_libs(repository_ctx, nvml_config)
+    nvml_lib_srcs = []
+    nvml_lib_outs = []
+    for path in nvml_libs.values():
+        nvml_lib_srcs.append(path)
+        nvml_lib_outs.append("lib/" + paths.basename(path))
+
+    copy_rules.append(make_copy_files_rule(
+        repository_ctx,
+        name = "nvml-lib",
+        srcs = nvml_lib_srcs,
+        outs = nvml_lib_outs,
+    ))
+
+    repository_ctx.template(
+        "nvml/BUILD",
+        _tpl_path(repository_ctx, "nvml:BUILD"),
+        {
+            "%{copy_rules}": "\n\n".join(copy_rules),
+            "%{nvml_lib}": paths.basename(nvml_libs["nvml"]),
+        },
+    )
+
 def _render_cudnn_template(repository_ctx, cudnn_config):
     cudnn_version = cudnn_config.cudnn_version
     if not cudnn_version:
@@ -260,7 +309,7 @@ def _render_cudnn_template(repository_ctx, cudnn_config):
         repository_ctx.symlink(cudnn_build_dummy, "cudnn/BUILD")
         return
 
-    cudnn_header_dir = cudnn_config.config["cudnn_include_dir"]
+    cudnn_include_dir = cudnn_config.config["cudnn_include_dir"]
 
     # Select the headers based on the cuDNN version
     cudnn_headers = ["cudnn.h"]
@@ -276,7 +325,7 @@ def _render_cudnn_template(repository_ctx, cudnn_config):
             "cudnn_version.h",
         ]
 
-    cudnn_srcs = ["{}/{}".format(cudnn_header_dir, header) for header in cudnn_headers]
+    cudnn_srcs = ["{}/{}".format(cudnn_include_dir, header) for header in cudnn_headers]
     cudnn_outs = ["include/{}".format(header) for header in cudnn_headers]
 
     copy_rules = [
@@ -330,8 +379,7 @@ def _render_cuda_template(repository_ctx, cuda_config):
     # Create genrule to copy files from the installed CUDA toolkit into execroot.
     copy_rules = []
 
-    check_cuda_libs_script = _check_cuda_family_libs_script(repository_ctx)
-    cuda_libs = _find_cuda_libs(repository_ctx, check_cuda_libs_script, cuda_config)
+    cuda_libs = _find_cuda_libs(repository_ctx, cuda_config)
     cuda_lib_srcs = []
     cuda_lib_outs = []
     for path in cuda_libs.values():
@@ -367,6 +415,7 @@ def _create_local_repository(repository_ctx):
     cuda_config = _get_cuda_family_config(repository_ctx, find_cuda_config_script)
 
     _render_cuda_template(repository_ctx, cuda_config)
+    _render_nvml_template(repository_ctx, cuda_config)
     _render_cudnn_template(repository_ctx, cuda_config)
     _render_nccl_template(repository_ctx, cuda_config)
 

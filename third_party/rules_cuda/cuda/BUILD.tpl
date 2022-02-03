@@ -18,6 +18,7 @@ cc_library(
 cc_library(
     name = "cuda_driver",
     srcs = ["cuda/lib/%{cuda_driver_lib}"],
+    linkstatic = 1,
     deps = [
         "@local_cuda//:cuda_headers",
     ],
@@ -86,15 +87,6 @@ cc_library(
         ":cudart",
         ":cufft",
         ":curand",
-        "@local_cuda//:cuda_headers",
-    ],
-)
-
-cc_library(
-    name = "cupti",
-    srcs = ["cuda/lib/%{cupti_lib}"],
-    deps = [
-        "@local_cuda//:cuda_headers",
     ],
 )
 
@@ -103,6 +95,14 @@ cc_library(
     srcs = ["cuda/lib/%{cusparse_lib}"],
     linkopts = ["-lgomp"],
     linkstatic = 1,
+    deps = [
+        "@local_cuda//:cuda_headers",
+    ],
+)
+
+cc_library(
+    name = "cupti",
+    srcs = ["cuda/lib/%{cupti_lib}"],
     deps = [
         "@local_cuda//:cuda_headers",
     ],

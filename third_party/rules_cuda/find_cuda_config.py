@@ -127,7 +127,6 @@ def _at_least_version(actual_version, required_version):
 
 
 def _get_header_version(path, name):
-    debug("_get_header_version:", path, name)
     """Returns preprocessor defines in C header file."""
     for line in io.open(path, "r", encoding="utf-8").readlines():
         match = re.match("#define {} +(\d+)".format(name), line)
@@ -417,12 +416,19 @@ def _find_nvml_config(base_paths, cuda_version):
 
     header_path, header_version = _find_header(base_paths, "nvml.h",
                                                get_header_version)
-    library_path = _find_library(base_paths, "nvidia-ml", "")
-    debug("nvml: version={}, header={} library={}".format(
-        header_version, header_path, library_path))
+    query_cmd = [
+        "nvidia-smi", "--query-gpu=driver_version", "--format=csv,noheader"
+    ]
+    driver_version = subprocess.check_output(query_cmd).decode("ascii").strip()
+
+    library_path = _find_library(base_paths, "nvidia-ml", driver_version)
+    debug("nvml: api_version={}, driver_version={}".format(
+        header_version, driver_version))
+    debug("nvml: header={}, library={}".format(header_path, library_path))
 
     return {
         "nvml_version": header_version,
+        "nvml_driver_version": driver_version,
         "nvml_include_dir": os.path.dirname(header_path),
         "nvml_library_dir": os.path.dirname(library_path),
     }
@@ -442,7 +448,7 @@ def _find_nvjpeg_config(base_paths, cuda_version):
                                                    get_header_version)
         cusparse_version = header_version.split(".")[0]
 
-    else:  # TODO(storypku): to be checked on Xavier w/ CUDA 10.2
+    else:  #TODO(storypku): to be checked on Xavier w/ CUDA 10.2
         header_version = cuda_version
         header_path = _find_file(base_paths, _HEADER_REL_PATHS, "nvjpeg.h")
         cusparse_version = cuda_version
@@ -617,9 +623,11 @@ def find_cuda_config():
         result.update(_find_curand_config(base_paths, cuda_version))
         result.update(_find_cufft_config(base_paths, cuda_version))
         result.update(_find_cusparse_config(base_paths, cuda_version))
+
         if platform.machine() == "x86_64":
             result.update(_find_nvml_config(base_paths, cuda_version))
             result.update(_find_nvjpeg_config(base_paths, cuda_version))
+
         result.update(_find_npp_config(base_paths, cuda_version))
 
     if "cudnn" in libraries:
@@ -641,7 +649,7 @@ def find_cuda_config():
 def main():
     try:
         for key, value in sorted(find_cuda_config().items()):
-            print("%s: %s" % (key, value))
+            print("{}: {}".format(key, value))
     except ConfigError as e:
         sys.stderr.write(str(e) + '\n')
         sys.exit(1)
