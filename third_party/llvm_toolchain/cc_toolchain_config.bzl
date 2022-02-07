@@ -137,28 +137,32 @@ def cc_toolchain_config(
     if not is_xcompile:
         cxx_flags = [
             "-std=c++17",
-            "-stdlib=libc++",
+            "-stdlib=libstdc++",
+            # "-stdlib=libc++",
         ]
 
         # For single-platform builds, we can statically link the bundled
         # libraries.
         link_flags.extend([
             "-L{}lib".format(toolchain_path_prefix),
-            "-l:libc++.a",
+            "-lstdc++",
+            # "-l:libc++.a",
             "-l:libc++abi.a",
             "-l:libunwind.a",
             # Compiler runtime features.
             "-rtlib=compiler-rt",
         ])
+
         link_libs.extend([
             # To support libunwind.
             "-lpthread",
             "-ldl",
         ])
-        # link_flags.extend([
-        #         "-lc++",
-        #        "-lc++abi",
-        #    ])
+
+        # # link_flags.extend([
+        # #         "-lc++",
+        # #        "-lc++abi",
+        # #    ])
 
     else:
         cxx_flags = [
