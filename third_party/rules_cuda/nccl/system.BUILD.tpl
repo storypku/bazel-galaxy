@@ -11,7 +11,7 @@ cc_library(
     hdrs = ["include/nccl.h"],
     visibility = ["//visibility:public"],
     deps = [
-        "@local_cuda//:cuda_headers",
+        "@local_config_cuda//cuda:cuda_headers",
     ],
 )
 

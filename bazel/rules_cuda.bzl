@@ -10,8 +10,10 @@ def cuda_library(name, **kwargs):
     """
 
     target_compatible_with = kwargs.pop("target_compatible_with", []) + requires_cuda_enabled()
+    deps = kwargs.pop("deps", []) + ["@local_config_cuda//cuda:cuda_headers"]
     _cuda_library(
         name = name,
+        deps = deps,
         target_compatible_with = target_compatible_with,
         **kwargs
     )
@@ -22,18 +24,19 @@ def cuda_binary(name, **kwargs):
     if srcs:
         virtual_lib = name + "_virtual"
         visibility = kwargs.pop("visibility", None)
+        prev_deps = kwargs.pop("deps", [])
         _cuda_library(
             name = virtual_lib,
             srcs = srcs,
+            deps = prev_deps + ["@local_config_cuda//cuda:cuda_headers"],
             target_compatible_with = target_compatible_with,
             visibility = ["//visibility:private"],
             **kwargs
         )
 
-        deps = kwargs.pop("deps", []) + [virtual_lib]
         cc_binary(
             name = name,
-            deps = deps,
+            deps = prev_deps + [virtual_lib],
             visibility = visibility,  # Restore visibility
             target_compatible_with = target_compatible_with,
             **kwargs

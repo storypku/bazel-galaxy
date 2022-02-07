@@ -8,7 +8,7 @@ cc_library(
     hdrs = [":cudnn-include"],
     linkstatic = 1,
     deps = [
-        "@local_cuda//:cuda_headers",
+        "@local_config_cuda//cuda:cuda_headers",
     ],
 )
 

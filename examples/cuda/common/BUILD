@@ -36,7 +36,7 @@ cc_library(
     ],
 )
 
-cc_library(
+cuda_library(
     name = "cufft_helper",
     srcs = ["cufft_helper.cc"],
     hdrs = ["cufft_helper.h"],
@@ -45,7 +45,7 @@ cc_library(
     ],
 )
 
-cc_library(
+cuda_library(
     name = "cusparse_helper",
     srcs = ["cusparse_helper.cc"],
     hdrs = ["cusparse_helper.h"],

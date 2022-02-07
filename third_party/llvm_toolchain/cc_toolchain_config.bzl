@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# NOTE(Jiaming): generated_symlink local_config_cc//:cc_toolchain_config.bzl
+# NOTE(Jiaming): generated symlink: @local_config_cc//:cc_toolchain_config.bzl
 load(
     "@rules_cc//cc/private/toolchain:unix_cc_toolchain_config.bzl",
     unix_cc_toolchain_config = "cc_toolchain_config",
