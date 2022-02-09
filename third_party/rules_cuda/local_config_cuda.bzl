@@ -478,5 +478,5 @@ local_config_cuda = repository_rule(
     implementation = _local_config_cuda_impl,
     environ = ["CUDA_PATH", "PATH"],
     local = True,
-    # remotable = True,
+    configure = True,
 )

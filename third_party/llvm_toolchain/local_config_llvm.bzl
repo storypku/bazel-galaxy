@@ -78,5 +78,5 @@ local_config_llvm = repository_rule(
     implementation = _local_config_llvm_impl,
     environ = ["LLVM_DIR"],
     local = True,
-    # remotable = True,
+    configure = True,
 )

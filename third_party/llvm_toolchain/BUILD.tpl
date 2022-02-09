@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@rules_cc//cc:defs.bzl", "cc_toolchain")
 load("@local_config_llvm//:cc_toolchain_config.bzl", "cc_toolchain_config")
+load("@local_cuda//:defs.bzl", "if_local_cuda")
+load("@rules_cc//cc:defs.bzl", "cc_toolchain")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -39,10 +40,10 @@ toolchain(
 
 cc_toolchain(
     name = "cc-clang-%{arch}-linux",
-    all_files = ":empty",
+    all_files = if_local_cuda("@local_cuda//:compiler_deps", ":empty"),
     ar_files = ":empty",
     as_files = ":empty",
-    compiler_files = ":empty",
+    compiler_files = if_local_cuda("@local_cuda//:compiler_deps", ":empty"),
     dwp_files = ":empty",
     linker_files = ":empty",
     objcopy_files = ":empty",
