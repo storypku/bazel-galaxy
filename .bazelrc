@@ -12,7 +12,7 @@ build --flag_alias=cuda=@rules_cuda//cuda:enable_cuda
 build --flag_alias=cuda_gpu_arch=@rules_cuda//cuda:cuda_targets
 
 build:cuda_clang --@rules_cuda//cuda:compiler=clang
-build:cuda_clang --@rules_cuda//cuda:copts=-Wno-unknown-cuda-version,-allow-unsupported-compiler
+build:cuda_clang --@rules_cuda//cuda:copts=-Wno-unknown-cuda-version
 
 build:cuda_nvcc --@rules_cuda//cuda:compiler=nvcc
 build:cuda_nvcc --@rules_cuda//cuda:copts=-Wno-unused-function
