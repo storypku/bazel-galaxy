@@ -13,7 +13,7 @@ class ConfigError(Exception):
 def find_clang_version(clang_binary):
     if not os.path.exists(clang_binary):
         raise ConfigError("File-not-found: {}".format(clang_binary))
-    command = [clang_binary, "--versionx"]
+    command = [clang_binary, "--version"]
     result = subprocess.run(command,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
