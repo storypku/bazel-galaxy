@@ -2,6 +2,7 @@ load("//third_party/absl:workspace.bzl", absl = "repo")
 load("//third_party/bazel_skylib:workspace.bzl", bazel_skylib = "repo")
 load("//third_party/glog:workspace.bzl", glog = "repo")
 load("//third_party/googletest:workspace.bzl", googletest = "repo")
+load("//third_party/libjpeg:workspace.bzl", libjpeg = "repo")
 load("//third_party/platforms:workspace.bzl", platforms = "repo")
 load("//third_party/rules_boost:workspace.bzl", rules_boost = "repo")
 load("//third_party/rules_cc:workspace.bzl", rules_cc = "repo")
@@ -27,6 +28,8 @@ def third_party_repos():
 
     rules_fuzzing()
     tcmalloc()
+
+    libjpeg()
 
 def galaxy_repositories():
     rules_bazel_repos()
