@@ -18,7 +18,7 @@ build:cuda_nvcc --@rules_cuda//cuda:compiler=nvcc
 build:cuda_nvcc --@rules_cuda//cuda:copts=-Wno-unused-function
 
 build:gpu --cuda=yes
-build:gpu --config=cuda_nvcc
+build:gpu --config=cuda_clang
 build:gpu --@rules_cuda//cuda:cuda_runtime=@local_cuda//:cuda_runtime
 
 # Make this configurable for x86_64 and aarch64

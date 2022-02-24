@@ -39,3 +39,4 @@ user.bazelrc
 *.bak
 .*.swp
 
+/compile_commands.json

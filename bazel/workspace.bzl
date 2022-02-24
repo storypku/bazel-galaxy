@@ -2,6 +2,7 @@ load("//third_party/absl:workspace.bzl", absl = "repo")
 load("//third_party/bazel_skylib:workspace.bzl", bazel_skylib = "repo")
 load("//third_party/glog:workspace.bzl", glog = "repo")
 load("//third_party/googletest:workspace.bzl", googletest = "repo")
+load("//third_party/hedron_compile_commands:workspace.bzl", hedron_compile_commands = "repo")
 load("//third_party/libjpeg:workspace.bzl", libjpeg = "repo")
 load("//third_party/platforms:workspace.bzl", platforms = "repo")
 load("//third_party/rules_boost:workspace.bzl", rules_boost = "repo")
@@ -15,6 +16,7 @@ load("//third_party/tcmalloc:workspace.bzl", tcmalloc = "repo")
 def rules_bazel_repos():
     bazel_skylib()
     platforms()
+    hedron_compile_commands()
 
 def rules_lang_repos():
     rules_python()
